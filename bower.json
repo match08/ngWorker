@@ -1,0 +1,25 @@
+{
+  "name": "ngWorker",
+  "homepage": "https://github.com/match08/ngWorker",
+  "authors": [
+    "match08 <match_2006@qq.com>"
+  ],
+  "description": "Web worker in angular",
+  "main": "ngWorker.js",
+  "keywords": [
+    "ngWorker",
+    "worker"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "www/lib",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "^1.5.8"
+  }
+}

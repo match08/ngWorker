@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ngWorker</title>
+  <script type="text/javascript" src="lib/angular/angular.min.js"></script>
+  <script type="text/javascript" src="../ngWorker.js"></script>
+  <script type="text/javascript">
+    /**
+    * ngWorkerDemo Module
+    *
+    * github: https://github.com/match08/ngWorker
+    * website http://www.weismarts.com
+    * Description match08
+    */
+     angular.module('ngWorkerDemo', ['ngWorker'])
+     .factory('MyWorker1', function () {
+       
+     
+       return function(){
+            var i=0,t=-1;
+            function _timedCount()
+            {
+              i=i+1;
+              postMessage(i);
+              t = setTimeout("_timedCount()",500);
+            }
+
+            //  
+            this.onmessage = function(e){
+              console.log('onmessage', e.data);
+              switch(e.data.command){
+                case 'start':
+                  start();
+                  break;
+                case 'stop':
+                  stop();
+                  break;
+                case 'clear':
+                  clear();
+                  break;
+              }
+            };
+
+           function start(){
+              console.log('start');
+              _timedCount();
+           };
+
+           function stop(){
+              console.log('stop');
+              t>-1 && clearTimeout(t);
+           };
+           function stop(){
+              console.log('stop');
+              t>-1 && clearTimeout(t);
+          
+           };
+           function clear(){
+              stop();
+              i = 0;
+              postMessage(i);
+           };
+       };
+     })
+     .run(function ($rootScope, wsWorker, MyWorker1) {
+
+
+        $rootScope.data = {value:0};
+        //建立一个worker
+        wsWorker.$new('worker1', MyWorker1);
+
+        //监听
+        wsWorker.onMessage('worker1', function(e){
+          $rootScope.data.value = e.data;
+          $rootScope.$apply();
+          console.log('worker1', e.data);
+        });
+
+
+         //worker1启动事件
+        $rootScope.start = function(){
+            wsWorker.postMessage('worker1',{command:'start'});
+        };
+        //worker1停止事件
+        $rootScope.stop = function(){
+            wsWorker.postMessage('worker1',{command:'stop'});
+        };
+        //worker1清除事件
+        $rootScope.clear = function(){
+            wsWorker.postMessage('worker1',{command:'clear'});
+        };
+        //终止worker1，不在可用
+        $rootScope.terminate = function(){
+            wsWorker.terminate('worker1');
+        };
+
+
+
+     });
+
+  </script>
+</head>
+<body ng-app="ngWorkerDemo">
+  <input ng-model="data.value">
+  <button ng-click="start()">start</button>
+  <button ng-click="stop()">stop</button>
+  <button ng-click="clear()">clear</button>
+  <button ng-click="terminate()">terminate</button>
+</body>
+</html>
