@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title>ngWorker Balls</title>
+      <script type="text/javascript" src="lib/angular/angular.min.js"></script>
+  	  <script type="text/javascript" src="../ngWorker.js"></script>
+  	  <script type="text/javascript">
+	    /**
+	    * ngWorkerBallsDemo Module
+	    *
+	    * github: https://github.com/match08/ngWorker
+	    * website http://www.weismarts.com
+	    * Description ngWorker绘制1000个小球
+	    */
+     angular.module('ngWorkerBallsDemo', ['ngWorker'])
+     .factory('DrawBallsWorker', function () {
+       return function(){
+
+            this.onmessage = function(e){
+              console.log('onmessage', e.data);
+              switch(e.data.command){
+                case 'draw':
+                  draw(e.data.nums, e.data.min_x, e.data.max_x, e.data.min_y, e.data.max_y);
+                  break;
+              }
+            };
+            function _getRandomColor(){
+				  return '#'+(Math.random()*0xffffff<<0).toString(16); 
+			}
+            function _getRandomNumber(min, max){
+				  return Math.floor(Math.random()*(max-min+1)+min); 
+			}
+			//绘制球
+           function draw(nums, min_x, max_x, min_y, max_y){
+             console.log('draw');
+             var balls = [];
+             var _nums = nums||1;
+             while(_nums--){
+	             // 设置小球默认的一些属性 
+				 var ball = {x: _getRandomNumber(min_x, max_x), y:_getRandomNumber(min_y, max_y), r:_getRandomNumber(5, 30), rs:2*Math.PI, color: _getRandomColor()};
+				 balls.push(ball);
+             }
+             this.postMessage({command:'draw',data:balls});
+           }
+       };
+     })
+     .run(function ($rootScope, wsWorker, DrawBallsWorker) {
+
+		var canvasWidth = 550 //document.body.clientWidth;
+		var canvasHeight = 400 //document.body.clientHeight;
+
+     	var canvas=document.getElementById("myCanvas");
+		// 设置canvas 的大小
+		canvas.width = canvasWidth;
+		canvas.height = canvasHeight;
+		var context=canvas.getContext("2d");
+
+
+
+		function render(ball){
+		
+			context.fillStyle = ball.color;
+			context.beginPath();
+			context.arc(ball.x, ball.y, ball.r, 0, ball.rs);
+			context.closePath();
+			context.fill();
+		}
+
+		function clear(){
+			// 清空画布
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+		}
+
+		// //建立小球绘制worker
+		wsWorker.$new('drawBallsWorker',DrawBallsWorker);
+
+		wsWorker.onMessage('drawBallsWorker', function(e){
+			var length = e.data.data.length;
+			while(length--){
+				render(e.data.data[length]);
+			};
+		});
+
+
+
+		$rootScope.ngWorkerDraw = function(){
+			// 清空画布
+			clear();
+			wsWorker.postMessage('drawBallsWorker',
+				{
+					command:'draw', 
+					nums:1000, 
+					min_x:0, 
+					max_x: 
+					canvas.width, 
+					min_y:0, 
+					max_y:canvas.height
+
+				}
+			);
+		};
+
+     });
+
+  	  </script>
+
+  </head>
+  <body ng-app="ngWorkerBallsDemo">
+    <canvas id="myCanvas" style="border: 1px solid red;"> 您的浏览器暂时不支持canvas </canvas>
+    <button ng-click="ngWorkerDraw()">ngWorker绘制1000个小球</button>
+  </body>
+  	
+  
+</html>

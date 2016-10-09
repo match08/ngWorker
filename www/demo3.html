@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title>ngWorker 1000 Balls Animation</title>
+    <style>
+		#myCanvas{
+			border: 1px dashed #999;
+			box-shadow:0px 4px 40px #233;
+			/*background: black;*/
+		}
+	</style>
+      <script type="text/javascript" src="lib/angular/angular.min.js"></script>
+  	  <script type="text/javascript" src="../ngWorker.js"></script>
+  	  <script type="text/javascript">
+
+		window.requestAnimFrame = (function(){ 
+			 return window.requestAnimationFrame || 
+			 window.webkitRequestAnimationFrame || 
+			 window.mozRequestAnimationFrame || 
+			 window.oRequestAnimationFrame || 
+			 window.msRequestAnimationFrame || 
+			 function( callback ){ 
+			  window.setTimeout(callback, 1000/60); 
+			 }; 
+		})(); 
+
+		//球
+		function Ball(maxWidth, maxHeight){
+			this.a=true;
+			this.b=true;
+			this.r=0;
+			this.ballColor={color:'#e2e2e2'};
+			this.vx=0;
+			this.vy=0;
+			this.ispeed=0;
+			this.ispeed2=0;
+			this.isDrawed = false;
+
+			var _this = this;
+
+			this.moveBall=function(context){
+				context.beginPath();
+				if (this.a) {
+					this.vx += this.ispeed;
+					if (this.vx>=maxWidth-this.r) {	
+						this.a = false;
+					}
+
+				} else {
+					this.vx -= this.ispeed;
+					if (this.vx <= this.r) {
+						this.a = true;
+					}
+				}
+
+				if (this.b) {
+					this.vy+= this.ispeed2;
+					if (this.vy >= maxHeight-this.r) {
+						this.b = false;
+					}
+
+				} else {
+					this.vy -= this.ispeed2;
+					if (this.vy <= this.r) {
+						this.b = true;
+					}
+				}
+
+				context.fillStyle=this.ballColor.color;
+				context.arc(this.vx,this.vy,this.r,0,Math.PI*2,false);
+				context.fill();
+			}
+
+
+			this.fromObject  = function(object){
+				_this.a = object.a;
+				_this.b = object.b;
+				_this.r = object.r;
+				_this.ballColor = object.ballColor;
+				_this.vx = object.vx;
+				_this.vy = object.vy;
+				_this.ispeed = object.ispeed;
+				_this.ispeed2 = object.ispeed2;
+				return _this;
+			};
+		}
+
+	    /**
+	    * ngWorkerBallsDemo Module
+	    *
+	    * github: https://github.com/match08/ngWorker
+	    * website http://www.weismarts.com
+	    * Description ngWorker绘制1000个小球碰撞动画
+	    */
+     angular.module('ngWorkerBallsDemo', ['ngWorker'])
+     .factory('DrawBallsWorker', function () {
+       return function(){
+
+       		var balls = [];
+
+            this.onmessage = function(e){
+              console.log('onmessage', e.data);
+              switch(e.data.command){
+                case 'draw':
+                  draw(e.data.nums, e.data.maxW, e.data.maxH);
+                  break;
+                case 'play':
+                	play(e.data.height);
+                  break;
+              }
+            };
+
+
+            function _getRandomColor(){
+				  return '#'+(Math.random()*0xffffff<<0).toString(16); 
+			}
+            function _getRandomNumber(min, max){
+				  return Math.floor(Math.random()*(max-min)+min); 
+			}
+
+			//绘制球
+           function draw(nums, maxWidth, maxHeight){
+	            console.log('draw');
+	            var balls = [];
+	            for(var i=0;i<nums;i++){
+	            	var ball = {};
+	            	ball.r=_getRandomNumber(10,30);
+					ball.ballColor={color:_getRandomColor()}
+					ball.vx=_getRandomNumber(30,maxWidth-30);
+					ball.vy=_getRandomNumber(30,maxHeight-30);
+					ball.ispeed=_getRandomNumber(1,10);
+					ball.ispeed2=_getRandomNumber(1,10);
+					balls[i]= ball;
+				}
+            	this.postMessage({command:'draw',balls:balls});
+           }
+       };
+     })
+     .run(function ($rootScope, wsWorker, DrawBallsWorker) {
+
+		var canvasWidth = 550 //document.body.clientWidth;
+		var canvasHeight = 400 //document.body.clientHeight;
+
+     	var canvas=document.getElementById("myCanvas");
+		// 设置canvas 的大小
+		canvas.width = canvasWidth;
+		canvas.height = canvasHeight;
+		var context=canvas.getContext("2d");
+
+		var balls=[];
+		for(var i=0;i<1000;i++){
+			balls[i]= new Ball(canvasWidth, canvasHeight);
+		}
+
+		function clear(){
+			// 清空画布
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+		}
+
+		
+		// //建立小球绘制worker
+		wsWorker.$new('drawBallsWorker',DrawBallsWorker);
+
+		wsWorker.onMessage('drawBallsWorker', function(e){
+			if(e.data.command == 'draw'){
+
+				var length = e.data.balls.length;
+				function play(){
+					clear();
+					for(var i=0;i<length;i++){
+						if(!balls[i].isDrawed){//绘制
+							balls[i].fromObject(e.data.balls[i]);
+							balls[i].isDrawed = true;
+						}
+						balls[i].moveBall(context);//动画
+					}
+					window.requestAnimationFrame(play);
+				}
+				play();
+
+
+			}
+		});
+
+		// 清空画布
+		clear();
+		//开始绘制
+		// console.log(balls)
+		wsWorker.postMessage('drawBallsWorker',
+			{
+				command:'draw', 
+				nums:balls.length,
+				maxW:canvas.width, 
+				maxH:canvas.height
+			}
+		);
+		
+
+
+     });
+
+  	  </script>
+
+  </head>
+  <body ng-app="ngWorkerBallsDemo">
+    <canvas id="myCanvas"> 您的浏览器暂时不支持canvas </canvas>
+  </body>
+  	
+  
+</html>
