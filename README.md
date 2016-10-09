@@ -10,16 +10,16 @@ ngWorker install
 ngWorker demos 
 
 	计数demo：  			      
-	https://github.com/match08/ngWorker/blob/master/www/demo1.html
+	https://match08.github.io/ngWorker/www/demo1.html
 
 	绘制1000个小球demo：
-	https://github.com/match08/ngWorker/blob/master/www/demo2.html
+	https://match08.github.io/ngWorker/www/demo2.html
 
 	绘制1000个小球碰撞动画demo：  
-	https://github.com/match08/ngWorker/blob/master/www/demo3.html
+	https://match08.github.io/ngWorker/www/demo3.html
 
 	ngWorker录制声音demo：  
-	https://github.com/match08/ngWorkerAudioRecorder/blob/master/demo/www/demo1.html
+	https://match08.github.io/ngWorkerAudioRecorder/demo/www/demo1.html
 
 什么是 Web Worker？
 当在 HTML 页面中执行脚本时，页面的状态是不可响应的，直到脚本已完成。
