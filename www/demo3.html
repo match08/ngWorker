@@ -106,8 +106,8 @@
                 case 'draw':
                   draw(e.data.nums, e.data.maxW, e.data.maxH);
                   break;
-                case 'play':
-                	play(e.data.height);
+                case 'randomColor':
+                	randomColor();
                   break;
               }
             };
@@ -120,10 +120,11 @@
 				  return Math.floor(Math.random()*(max-min)+min); 
 			}
 
+		   
 			//绘制球
            function draw(nums, maxWidth, maxHeight){
 	            console.log('draw');
-	            var balls = [];
+	           
 	            for(var i=0;i<nums;i++){
 	            	var ball = {};
 	            	ball.r=_getRandomNumber(10,30);
@@ -135,6 +136,21 @@
 					balls[i]= ball;
 				}
             	this.postMessage({command:'draw',balls:balls});
+           }
+
+           function randomColor(){
+           	 var length = balls.length;
+           
+           	 var i,colors=[];
+           	 for(i=0;i<5;i++){
+           	 	colors.push(_getRandomColor());
+           	 }
+           	 for(i=0;i<length;i++){
+                 balls[i].ballColor = {color:colors[_getRandomNumber(0,4)]};
+           	 }
+           	
+           	 this.postMessage({command:'randomColor',balls:balls});
+           	
            }
        };
      })
@@ -180,8 +196,11 @@
 					window.requestAnimationFrame(play);
 				}
 				play();
-
-
+			}else if(e.data.command == 'randomColor'){
+				var length = e.data.balls.length;
+				for(var i=0;i<length;i++){
+					balls[i].ballColor = e.data.balls[i].ballColor;
+				}
 			}
 		});
 
@@ -198,7 +217,13 @@
 			}
 		);
 		
-
+        $rootScope.randomColor = function(){
+			wsWorker.postMessage('drawBallsWorker',
+				{
+					command:'randomColor'
+				}
+			);
+        };
 
      });
 
@@ -207,6 +232,7 @@
   </head>
   <body ng-app="ngWorkerBallsDemo">
     <canvas id="myCanvas"> 您的浏览器暂时不支持canvas </canvas>
+    <button ng-click="randomColor()">随机颜色</button>
   </body>
   	
   
